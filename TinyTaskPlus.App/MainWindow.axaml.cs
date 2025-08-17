@@ -34,6 +34,7 @@ public partial class MainWindow : Window
 		StopButton.Click += async (_, __) => await StopRecordAsync();
 		PlayButton.Click += async (_, __) => await PlayAsync();
 		AssignButton.Click += async (_, __) => await AssignAsync();
+		AssignAppButton.Click += async (_, __) => await AssignAppAsync();
 #if WINDOWS
 		HotkeyToggle.IsCheckedChanged += (_, __) => ToggleHotkey(HotkeyToggle.IsChecked == true);
 #endif
@@ -90,7 +91,7 @@ public partial class MainWindow : Window
 #if WINDOWS
 		_playCts?.Cancel();
 		_playCts = new CancellationTokenSource();
-		await _player.PlayAsync(macro, _playCts.Token);
+		await _player.PlayAsync(EnsureResolvedAssignment(macro), _playCts.Token);
 #endif
 	}
 
@@ -113,6 +114,44 @@ public partial class MainWindow : Window
 		}
 #endif
 	}
+
+	private async Task AssignAppAsync()
+	{
+		if (MacroList.SelectedItem is not Macro macro) return;
+#if WINDOWS
+		var dialog = new ProcessPickerDialog();
+		var selected = await dialog.ShowDialog<ProcessInfo?>(this);
+		if (selected != null)
+		{
+			macro.Assignment ??= new MacroAssignment();
+			macro.Assignment.ProcessId = selected.ProcessId;
+			macro.Assignment.ProcessPath = selected.FileName;
+			macro.Assignment.WindowTitle = selected.MainWindowTitle;
+			macro.Assignment.TopLevelHwndHex = selected.MainWindowHandleHex;
+			await SaveAsync();
+		}
+#endif
+	}
+
+#if WINDOWS
+	private Macro EnsureResolvedAssignment(Macro macro)
+	{
+		if (macro.Assignment?.TopLevelHwndHex is string hwnd && !string.IsNullOrEmpty(hwnd)) return macro;
+		if (macro.Assignment?.ProcessId is int pid)
+		{
+			try
+			{
+				var p = System.Diagnostics.Process.GetProcessById(pid);
+				if (p.MainWindowHandle != IntPtr.Zero)
+				{
+					macro.Assignment.TopLevelHwndHex = ((nint)p.MainWindowHandle).ToString("X");
+				}
+			}
+			catch { }
+		}
+		return macro;
+	}
+#endif
 
 #if WINDOWS
 	private void ToggleHotkey(bool enable)

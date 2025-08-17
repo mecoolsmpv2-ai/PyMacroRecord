@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TinyTaskPlus.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+06adce03a8de2bf74d1f57ddee85535a4c02468d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+30941c3b6973343650228d8976598d3971a7ceb4")]
 [assembly: System.Reflection.AssemblyProductAttribute("TinyTaskPlus.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TinyTaskPlus.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
