@@ -76,12 +76,20 @@ public partial class MainWindow : Window
 	private async Task AssignAsync()
 	{
 		if (MacroList.SelectedItem is not Macro macro) return;
-		// Simplest placeholder: keep the last recorded window as assignment
-		var last = macro.Events.LastOrDefault(e => !string.IsNullOrEmpty(e.TargetWindowHandleHex));
-		if (last != null)
+#if WINDOWS
+		var dialog = new AssignWindowDialog();
+		var selected = await dialog.ShowDialog<WindowInfo?>(this);
+		if (selected != null)
 		{
-			macro.Assignment = new MacroAssignment { TopLevelHwndHex = last.TargetWindowHandleHex };
+			macro.Assignment = new MacroAssignment
+			{
+				TopLevelHwndHex = selected.HandleHex,
+				ProcessId = selected.ProcessId,
+				ProcessPath = selected.ProcessPath,
+				WindowTitle = selected.Title,
+			};
 			await SaveAsync();
 		}
+#endif
 	}
 }
