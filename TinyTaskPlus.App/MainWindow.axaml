@@ -9,6 +9,8 @@
 			<Button x:Name="StopButton" Content="Stop"/>
 			<Button x:Name="PlayButton" Content="Play"/>
 			<Button x:Name="AssignButton" Content="Assign to Window"/>
+			<TextBlock Text="Hotkey: Ctrl+Alt+F9" VerticalAlignment="Center" Margin="12,0,0,0"/>
+			<ToggleSwitch x:Name="HotkeyToggle" OnContent="Hotkey On" OffContent="Hotkey Off"/>
 		</StackPanel>
 		<ListBox x:Name="MacroList" Grid.Row="1">
 			<ListBox.ItemTemplate>

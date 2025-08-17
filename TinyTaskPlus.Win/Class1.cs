@@ -4,7 +4,7 @@ using TinyTaskPlus.Core;
 
 namespace TinyTaskPlus.Win;
 
-internal static class User32
+public static class User32
 {
 	public const int WH_KEYBOARD_LL = 13;
 	public const int WH_MOUSE_LL = 14;
@@ -23,6 +23,10 @@ internal static class User32
 	public const int WM_MOUSEWHEEL = 0x020A;
 
 	public const int MK_LBUTTON = 0x0001;
+
+	public const int VK_SHIFT = 0x10;
+	public const int VK_CONTROL = 0x11;
+	public const int VK_MENU = 0x12; // ALT
 
 	public delegate IntPtr HookProc(int nCode, IntPtr wParam, IntPtr lParam);
 
@@ -64,6 +68,7 @@ internal static class User32
 	public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
 	[DllImport("user32.dll")] public static extern bool GetCursorPos(out POINT lpPoint);
+	[DllImport("user32.dll")] public static extern short GetAsyncKeyState(int vKey);
 
 	[StructLayout(LayoutKind.Sequential)]
 	public struct POINT { public int X; public int Y; }
