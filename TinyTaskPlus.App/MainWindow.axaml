@@ -1,0 +1,23 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:core="clr-namespace:TinyTaskPlus.Core;assembly=TinyTaskPlus.Core"
+        x:Class="TinyTaskPlus.App.MainWindow"
+        Title="TinyTask Plus" Width="640" Height="420">
+	<Grid RowDefinitions="Auto,*,Auto" Margin="12">
+		<StackPanel Orientation="Horizontal" Spacing="8">
+			<Button x:Name="RecordButton" Content="Record"/>
+			<Button x:Name="StopButton" Content="Stop"/>
+			<Button x:Name="PlayButton" Content="Play"/>
+			<Button x:Name="AssignButton" Content="Assign to Window"/>
+		</StackPanel>
+		<ListBox x:Name="MacroList" Grid.Row="1">
+			<ListBox.ItemTemplate>
+				<DataTemplate x:DataType="core:Macro">
+					<TextBlock Text="{Binding Name}"/>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
+		<TextBlock Grid.Row="2" TextWrapping="Wrap" Opacity="0.7"
+		           Text="Record mouse/keyboard, then assign a macro to a specific window. Playback uses background PostMessage where possible."/>
+	</Grid>
+</Window>
