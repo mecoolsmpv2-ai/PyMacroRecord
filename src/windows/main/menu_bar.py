@@ -79,6 +79,7 @@ class MenuBar(Menu):
         self.options_menu.add_cascade(label=self.text_config["options_menu"]["settings_menu"]["settings_text"], menu=self.options_sub)
         self.options_sub.add_command(label=self.text_config["options_menu"]["settings_menu"]["hotkeys_text"], command=lambda: Hotkeys(self, parent))
         self.options_sub.add_command(label=self.text_config["options_menu"]["settings_menu"]["lang_text"], command=lambda: SelectLanguage(self, parent))
+        self.options_sub.add_command(label="Target", command=lambda: TargetSelection(self, parent))
 
         minimization_sub = Menu(self.options_sub, tearoff=0)
         self.options_sub.add_cascade(label=self.text_config["options_menu"]["settings_menu"]["minimization_text"], menu=minimization_sub)

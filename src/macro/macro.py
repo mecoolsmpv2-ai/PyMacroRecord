@@ -13,6 +13,9 @@ from utils.keys import vk_nb
 from utils.record_file_management import RecordFileManagement
 from utils.show_toast import show_notification_minim
 from utils.warning_pop_up_save import confirm_save
+from targets.global_os import GlobalOSDispatcher
+from targets.chrome_cdp import ChromeTabDispatcher
+from targets.win32_window import Win32WindowDispatcher
 
 
 class Macro:
@@ -41,6 +44,7 @@ class Macro:
                 on_press=self.__on_press, on_release=self.__on_release
             )
         self.keyboard_listener.start()
+        self.dispatcher = GlobalOSDispatcher(self)
 
     def start_record(self, by_hotkey=False):
         if self.main_app.prevent_record:
@@ -52,10 +56,17 @@ class Macro:
                     self.macro_file_management.save_macro()
                 elif wantToSave is None:
                     return
-        self.macro_events = {"events": []}
+        self.macro_events = {"events": [], "meta": {}}
         self.record = True
         self.time = time()
         self.event_delta_time=0
+        try:
+            ws = self.main_app.winfo_screenwidth()
+            hs = self.main_app.winfo_screenheight()
+            self.macro_events["meta"]["record_screen_width"] = ws
+            self.macro_events["meta"]["record_screen_height"] = hs
+        except Exception:
+            pass
         userSettings = self.user_settings.settings_dict
         self.showEventsOnStatusBar = userSettings["Recordings"]["Show_Events_On_Status_Bar"]
         if (
@@ -144,6 +155,22 @@ class Macro:
         if userSettings["Minimization"]["When_Playing"]:
             self.main_app.withdraw()
             Thread(target=lambda: show_notification_minim(self.main_app)).start()
+        # Initialize dispatcher based on target selection
+        target = userSettings.get("Target", {"Type": "Global"})
+        if target.get("Type") == "ChromeTab" and target.get("Chrome", {}).get("webSocketDebuggerUrl"):
+            try:
+                self.dispatcher = ChromeTabDispatcher(target.get("Chrome"), self)
+            except Exception as e:
+                print(f"Failed to initialize Chrome dispatcher: {e}. Falling back to Global.")
+                self.dispatcher = GlobalOSDispatcher(self)
+        elif target.get("Type") == "Win32Window" and target.get("Win32", {}).get("hwnd"):
+            try:
+                self.dispatcher = Win32WindowDispatcher(target.get("Win32"), self)
+            except Exception as e:
+                print(f"Failed to initialize Win32 dispatcher: {e}. Falling back to Global.")
+                self.dispatcher = GlobalOSDispatcher(self)
+        else:
+            self.dispatcher = GlobalOSDispatcher(self)
         if userSettings["Playback"]["Repeat"]["Interval"] > 0:
             Thread(target=self.__play_interval).start()
         elif userSettings["Playback"]["Repeat"]["For"] > 0:
@@ -183,9 +210,9 @@ class Macro:
         global keyToPress
         userSettings = self.user_settings.settings_dict
         click_func = {
-            "leftClickEvent": Button.left,
-            "rightClickEvent": Button.right,
-            "middleClickEvent": Button.middle,
+            "leftClickEvent": "left",
+            "rightClickEvent": "right",
+            "middleClickEvent": "middle",
         }
         keyToUnpress = []
 
@@ -230,24 +257,19 @@ class Macro:
                 sleep(timeSleep)
                 event_type = self.macro_events["events"][events]["type"]
 
-                if event_type == "cursorMove":  # Cursor Move
-                    self.mouseControl.position = (
-                        self.macro_events["events"][events]["x"],
-                        self.macro_events["events"][events]["y"],
-                    )
+                if event_type == "cursorMove":
+                    x = self.macro_events["events"][events]["x"]
+                    y = self.macro_events["events"][events]["y"]
+                    self.dispatcher.dispatch_mouse_move(x, y, self.macro_events)
 
-                elif event_type in click_func:  # Mouse Click
-                    self.mouseControl.position = (
-                        self.macro_events["events"][events]["x"],
-                        self.macro_events["events"][events]["y"],
-                    )
-                    if self.macro_events["events"][events]["pressed"]:
-                        self.mouseControl.press(click_func[event_type])
-                    else:
-                        self.mouseControl.release(click_func[event_type])
+                elif event_type in click_func:
+                    x = self.macro_events["events"][events]["x"]
+                    y = self.macro_events["events"][events]["y"]
+                    pressed = self.macro_events["events"][events]["pressed"]
+                    self.dispatcher.dispatch_mouse_click(click_func[event_type], pressed, x, y, self.macro_events)
 
                 elif event_type == "scrollEvent":
-                    self.mouseControl.scroll(
+                    self.dispatcher.dispatch_scroll(
                         self.macro_events["events"][events]["dx"],
                         self.macro_events["events"][events]["dy"],
                     )
@@ -271,11 +293,11 @@ class Macro:
                                             self.macro_events["events"][events]["pressed"]
                                             == True
                                     ):
-                                        self.keyboardControl.press(keyToPress)
+                                        self.dispatcher.dispatch_key(keyToPress, True)
                                         if keyToPress not in keyToUnpress:
                                             keyToUnpress.append(keyToPress)
                                     else:
-                                        self.keyboardControl.release(keyToPress)
+                                        self.dispatcher.dispatch_key(keyToPress, False)
                         except ValueError as e:
                             messagebox.showerror("Error",
                                                  f"Error during playback \"{e}\". Please open an issue on Github.")
@@ -299,10 +321,15 @@ class Macro:
                 self.main_app.deiconify()
 
     def unPressEverything(self, keyToUnpress):
-        for key in keyToUnpress:
-            self.keyboardControl.release(key)
-        self.mouseControl.release(Button.left)
-        self.mouseControl.release(Button.middle)
+        try:
+            for key in keyToUnpress:
+                self.dispatcher.dispatch_key(key, False)
+            self.dispatcher.release_all_mouse_buttons()
+        except Exception:
+            for key in keyToUnpress:
+                self.keyboardControl.release(key)
+            self.mouseControl.release(Button.left)
+            self.mouseControl.release(Button.middle)
 
     def stop_playback(self, playback_stopped_manually=False):
         self.playback = False
