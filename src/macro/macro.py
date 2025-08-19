@@ -15,6 +15,7 @@ from utils.show_toast import show_notification_minim
 from utils.warning_pop_up_save import confirm_save
 from targets.global_os import GlobalOSDispatcher
 from targets.chrome_cdp import ChromeTabDispatcher
+from targets.win32_window import Win32WindowDispatcher
 
 
 class Macro:
@@ -161,6 +162,12 @@ class Macro:
                 self.dispatcher = ChromeTabDispatcher(target.get("Chrome"), self)
             except Exception as e:
                 print(f"Failed to initialize Chrome dispatcher: {e}. Falling back to Global.")
+                self.dispatcher = GlobalOSDispatcher(self)
+        elif target.get("Type") == "Win32Window" and target.get("Win32", {}).get("hwnd"):
+            try:
+                self.dispatcher = Win32WindowDispatcher(target.get("Win32"), self)
+            except Exception as e:
+                print(f"Failed to initialize Win32 dispatcher: {e}. Falling back to Global.")
                 self.dispatcher = GlobalOSDispatcher(self)
         else:
             self.dispatcher = GlobalOSDispatcher(self)
