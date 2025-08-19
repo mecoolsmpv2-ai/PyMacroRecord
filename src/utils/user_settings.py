@@ -83,6 +83,15 @@ class UserSettings:
                 # Quit, Lock Computer, Lof off computer, Turn off computer, Restart Computer, Standby, Hibernate
             },
 
+            "Target": {
+                "Type": "Global",
+                "Chrome": {
+                    "title": "",
+                    "webSocketDebuggerUrl": "",
+                    "tabId": ""
+                }
+            },
+
             "Language": "en",
             "Time_string": "PM",
             "Time_format": "12 hours",
@@ -165,6 +174,8 @@ class UserSettings:
             userSettings["Playback"]["Repeat"]["Infinite"] = False
         if "Show_Events_On_Status_Bar" not in userSettings["Recordings"]:
             userSettings["Recordings"]["Show_Events_On_Status_Bar"] = False
+        if "Target" not in userSettings:
+            userSettings["Target"] = {"Type": "Global", "Chrome": {"title": "", "webSocketDebuggerUrl": "", "tabId": ""}}
         if "Loading" not in userSettings:
             userSettings["Loading"] = {}
             if "Always_import_macro_settings" not in userSettings["Loading"]:
